@@ -18,6 +18,7 @@
     "xstream": "^10.7.0"
   },
   "devDependencies": {
+    "@cycle/http": "^13.3.0",
     "@cycle/run": "^3.1.0",
     "babel-cli": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
