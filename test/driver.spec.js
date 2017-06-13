@@ -18,7 +18,7 @@ const httpsOptions = {
 };
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-describe('cycle-node-http', function () {
+describe('driver', function () {
 
     this.timeout(10000);
 
@@ -28,10 +28,10 @@ describe('cycle-node-http', function () {
 
             const { httpServer, fake, HTTP } = sources;
 
-            const http$ = httpServer.createHttp({port:1983}).endWhen(fake);
+            const http$ = httpServer.createHttp({ port: 1983 }).endWhen(fake);
             const httpServerReady$ = http$.take(1);
             const serverRequest$ = http$.drop(1);
-            const serverResponse$ = serverRequest$.map(({ req, res }) => res.text('pouet'));
+            const serverResponse$ = serverRequest$.map(req => req.response.text('pouet'));
 
             const request$ = httpServerReady$.map(() => ({
                 url: 'http://127.0.0.1:1983',
@@ -68,10 +68,10 @@ describe('cycle-node-http', function () {
 
             const { httpServer, fake, HTTP } = sources;
 
-            const https$ = httpServer.createHttps({port:1984},httpsOptions).endWhen(fake);
+            const https$ = httpServer.createHttps({ port: 1984 }, httpsOptions).endWhen(fake);
             const httpServerReady$ = https$.take(1);
             const serverRequest$ = https$.drop(1);
-            const serverResponse$ = serverRequest$.map(({ req, res }) => res.text('pouet'));
+            const serverResponse$ = serverRequest$.map(req => req.response.text('pouet'));
 
             const request$ = httpServerReady$.map(() => ({
                 url: 'https://127.0.0.1:1984',
@@ -105,23 +105,23 @@ describe('cycle-node-http', function () {
     it('http init with one post request using a middleware', function (done) {
 
         const DATA_SENT = {
-            cov:'fefe',
-            foo:'bar',
+            cov: 'fefe',
+            foo: 'bar',
         };
 
         function main(sources) {
 
             const { httpServer, fake, HTTP } = sources;
 
-            const http$ = httpServer.createHttp({port:1985}).endWhen(fake);
+            const http$ = httpServer.createHttp({ port: 1985 }).endWhen(fake);
             const httpServerReady$ = http$.take(1);
             const serverRequest$ = http$.drop(1);
-            const serverResponse$ = serverRequest$.map(({ req, res }) => res.json(req.body));
+            const serverResponse$ = serverRequest$.map(req => req.response.json(req.body));
 
             const request$ = httpServerReady$.map(() => ({
                 url: 'http://127.0.0.1:1985',
-                method:'POST',
-                send:DATA_SENT,
+                method: 'POST',
+                send: DATA_SENT,
                 category: 'foo'
             }));
 
@@ -138,8 +138,8 @@ describe('cycle-node-http', function () {
 
         const drivers = {
             httpServer: makeNodeHttpServerDriver({
-                middlewares:[
-                    bodyParser.urlencoded({extended:true}),
+                middlewares: [
+                    bodyParser.urlencoded({ extended: true }),
                     bodyParser.json()
                 ]
             }),

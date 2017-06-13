@@ -27,7 +27,8 @@
     "babel-register": "^6.24.1",
     "body-parser": "^1.17.2",
     "lodash": "^4.17.4",
-    "mocha": "^3.4.2"
+    "mocha": "^3.4.2",
+    "switch-path": "^1.2.0"
   },
   "author": "Pierre Chabiland",
   "license": "MIT"

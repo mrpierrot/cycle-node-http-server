@@ -1,13 +1,14 @@
 import qs from 'querystring';
 import xs from 'xstream';
+import { createResponseWrapper } from './response';
 
-export function createRequestWrapper(original) {
+export function createRequestWrapper(req, res) {
     return {
-        original,
-        url:original.url,
-        method:original.method,
-        headers: original.headers,
-        body:original.body
-
+        original: req,
+        url: req.url,
+        method: req.method,
+        headers: req.headers,
+        body: req.body,
+        response: createResponseWrapper(res)
     }
 }

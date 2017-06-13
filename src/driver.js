@@ -1,7 +1,6 @@
 import http from 'http';
 import https from 'https';
 import xs from 'xstream';
-import { createResponseWrapper } from './response';
 import { createRequestWrapper } from './request';
 
 function applyMiddlewares(middlewares, req, res) {
@@ -27,21 +26,18 @@ function applyMiddlewares(middlewares, req, res) {
 function createServerProducer(listenOptions, middlewares, createServer) {
     let server;
 
-    const listenArgs = typeof(listenOptions.handle)==='object'?listenOptions.handle:
-                       typeof(listenOptions.path)==='string'?listenOptions.path:
-                       [listenOptions.port,listenOptions.hostname,listenOptions.backlog]
+    const listenArgs = typeof (listenOptions.handle) === 'object' ? listenOptions.handle :
+        typeof (listenOptions.path) === 'string' ? listenOptions.path :
+            [listenOptions.port, listenOptions.hostname, listenOptions.backlog]
 
     return {
         start(listener) {
             server = createServer((req, res) => applyMiddlewares(middlewares, req, res).then(() => {
-                listener.next({
-                    req: createRequestWrapper(req),
-                    res: createResponseWrapper(res)
-                })
+                listener.next(createRequestWrapper(req, res))
             }));
             server.listen.apply(server, [...listenArgs, () => {
                 listener.next({
-                    instance:server
+                    instance: server
                 })
             }])
         },
@@ -52,7 +48,7 @@ function createServerProducer(listenOptions, middlewares, createServer) {
     }
 }
 
-export function makeNodeHttpServerDriver({ middlewares = [] }={}) {
+export function makeNodeHttpServerDriver({ middlewares = [] } = {}) {
 
     return function nodeHttpServerDriver(input$) {
 
@@ -70,12 +66,12 @@ export function makeNodeHttpServerDriver({ middlewares = [] }={}) {
         })
 
         return {
-            createHttp(listenOptions={port:null,hostname:null,backlog:null,handle:null,path:null}) {
+            createHttp(listenOptions = { port: null, hostname: null, backlog: null, handle: null, path: null }) {
                 return xs.create(createServerProducer(listenOptions, middlewares, (callback) => http.createServer(callback)))
             },
-            createHttps(listenOptions={port:null,hostname:null,backlog:null,handle:null,path:null}, secureOptions) {
+            createHttps(listenOptions = { port: null, hostname: null, backlog: null, handle: null, path: null }, secureOptions) {
                 return xs.create(createServerProducer(listenOptions, middlewares, (callback) => https.createServer(secureOptions, callback)))
-               
+
             }
         }
     }

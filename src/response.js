@@ -1,6 +1,6 @@
 
 
-export function createResponseWrapper(res,render = (data) => data) {
+export function createResponseWrapper(res, render = (data) => data) {
 
     function _send(content, { statusCode = 200, headers = null, statusMessage = null } = {}) {
         return {
@@ -34,8 +34,8 @@ export function createResponseWrapper(res,render = (data) => data) {
                 statusMessage
             });
         },
-        render(content, { beforeContent='',afterContent='',statusCode = 200, headers = null, statusMessage = null } = {}) {
-            return _send(beforeContent+render(content)+afterContent, {
+        render(content, { beforeContent = '', afterContent = '', statusCode = 200, headers = null, statusMessage = null } = {}) {
+            return _send(beforeContent + render(content) + afterContent, {
                 statusCode,
                 headers: {
                     'Content-Type': 'text/html',
