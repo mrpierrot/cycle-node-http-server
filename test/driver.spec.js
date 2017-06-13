@@ -1,7 +1,7 @@
 
 require('babel-polyfill');
 
-const { makeNodeHttpServerDriver } = require('../src/driver');
+const { makeHttpServerDriver } = require('../src/driver');
 const { run } = require('@cycle/run');
 
 const http = require('http');
@@ -50,7 +50,7 @@ describe('driver', function () {
         }
 
         const drivers = {
-            httpServer: makeNodeHttpServerDriver(),
+            httpServer: makeHttpServerDriver(),
             HTTP: makeHTTPDriver(),
             fake: makeFakeReadDriver((outgoing, i, complete) => {
                 if (outgoing.text) {
@@ -90,7 +90,7 @@ describe('driver', function () {
         }
 
         const drivers = {
-            httpServer: makeNodeHttpServerDriver(),
+            httpServer: makeHttpServerDriver(),
             HTTP: makeHTTPDriver(),
             fake: makeFakeReadDriver((outgoing, i, complete) => {
                 if (outgoing.text) {
@@ -137,7 +137,7 @@ describe('driver', function () {
         }
 
         const drivers = {
-            httpServer: makeNodeHttpServerDriver({
+            httpServer: makeHttpServerDriver({
                 middlewares: [
                     bodyParser.urlencoded({ extended: true }),
                     bodyParser.json()

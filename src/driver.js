@@ -48,9 +48,9 @@ function createServerProducer(listenOptions, middlewares, createServer) {
     }
 }
 
-export function makeNodeHttpServerDriver({ middlewares = [] } = {}) {
+export function makeHttpServerDriver({ middlewares = [] } = {}) {
 
-    return function nodeHttpServerDriver(input$) {
+    return function httpServerDriver(input$) {
 
         input$.addListener({
             next({ res, content, headers = null, statusCode = 200, statusMessage = null }) {
