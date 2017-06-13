@@ -1,6 +1,6 @@
 # cycle-node-http-server
 
-Driver and routing component for manage HTTP/HTTPS services with Cycle.js
+Driver and router component for manage HTTP/HTTPS services with Cycle.js
 
 ## Installation
 
