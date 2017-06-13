@@ -26,6 +26,11 @@ function applyMiddlewares(middlewares, req, res) {
 
 function createServerProducer(listenOptions, middlewares, createServer) {
     let server;
+
+    const listenArgs = typeof(listenOptions.handle)==='object'?listenOptions.handle:
+                       typeof(listenOptions.path)==='string'?listenOptions.path:
+                       [listenOptions.port,listenOptions.hostname,listenOptions.backlog]
+
     return {
         start(listener) {
             server = createServer((req, res) => applyMiddlewares(middlewares, req, res).then(() => {
@@ -34,7 +39,7 @@ function createServerProducer(listenOptions, middlewares, createServer) {
                     res: createResponseWrapper(res)
                 })
             }));
-            server.listen.apply(server, [...listenOptions, () => {
+            server.listen.apply(server, [...listenArgs, () => {
                 listener.next({
                     instance:server
                 })
@@ -65,10 +70,10 @@ export function makeNodeHttpServerDriver({ middlewares = [] }={}) {
         })
 
         return {
-            createHttp(listenOptions) {
+            createHttp(listenOptions={port:null,hostname:null,backlog:null,handle:null,path:null}) {
                 return xs.create(createServerProducer(listenOptions, middlewares, (callback) => http.createServer(callback)))
             },
-            createHttps(listenOptions, secureOptions) {
+            createHttps(listenOptions={port:null,hostname:null,backlog:null,handle:null,path:null}, secureOptions) {
                 return xs.create(createServerProducer(listenOptions, middlewares, (callback) => https.createServer(secureOptions, callback)))
                
             }

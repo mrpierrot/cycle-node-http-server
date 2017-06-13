@@ -28,7 +28,7 @@ describe('cycle-node-http', function () {
 
             const { httpServer, fake, HTTP } = sources;
 
-            const http$ = httpServer.createHttp([1983]).endWhen(fake);
+            const http$ = httpServer.createHttp({port:1983}).endWhen(fake);
             const httpServerReady$ = http$.take(1);
             const serverRequest$ = http$.drop(1);
             const serverResponse$ = serverRequest$.map(({ req, res }) => res.text('pouet'));
@@ -68,7 +68,7 @@ describe('cycle-node-http', function () {
 
             const { httpServer, fake, HTTP } = sources;
 
-            const https$ = httpServer.createHttps([1984],httpsOptions).endWhen(fake);
+            const https$ = httpServer.createHttps({port:1984},httpsOptions).endWhen(fake);
             const httpServerReady$ = https$.take(1);
             const serverRequest$ = https$.drop(1);
             const serverResponse$ = serverRequest$.map(({ req, res }) => res.text('pouet'));
@@ -113,7 +113,7 @@ describe('cycle-node-http', function () {
 
             const { httpServer, fake, HTTP } = sources;
 
-            const http$ = httpServer.createHttp([1985]).endWhen(fake);
+            const http$ = httpServer.createHttp({port:1985}).endWhen(fake);
             const httpServerReady$ = http$.take(1);
             const serverRequest$ = http$.drop(1);
             const serverResponse$ = serverRequest$.map(({ req, res }) => res.json(req.body));
