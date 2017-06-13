@@ -69,7 +69,8 @@ export function makeNodeHttpServerDriver({ middlewares = [] }={}) {
                 return xs.create(createServerProducer(listenOptions, middlewares, (callback) => http.createServer(callback)))
             },
             createHttps(listenOptions, secureOptions) {
-                return xs.create(createServerProducer(listenOptions, middlewares, (callback) => http.createServer(secureOptions, callback)))
+                return xs.create(createServerProducer(listenOptions, middlewares, (callback) => https.createServer(secureOptions, callback)))
+               
             }
         }
     }
