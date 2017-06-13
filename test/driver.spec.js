@@ -22,7 +22,7 @@ describe('cycle-node-http', function () {
 
     this.timeout(10000);
 
-    it('http init with one distant call', function (done) {
+    it('http init with one get request', function (done) {
 
         function main(sources) {
 
@@ -62,19 +62,19 @@ describe('cycle-node-http', function () {
 
     });
 
-    it('https init with one distant call', function (done) {
+    it('https init with get request', function (done) {
 
         function main(sources) {
 
             const { httpServer, fake, HTTP } = sources;
 
-            const https$ = httpServer.createHttps([1983],httpsOptions).endWhen(fake);
+            const https$ = httpServer.createHttps([1984],httpsOptions).endWhen(fake);
             const httpServerReady$ = https$.take(1);
             const serverRequest$ = https$.drop(1);
             const serverResponse$ = serverRequest$.map(({ req, res }) => res.text('pouet'));
 
             const request$ = httpServerReady$.map(() => ({
-                url: 'https://127.0.0.1:1983',
+                url: 'https://127.0.0.1:1984',
                 category: 'foo'
             }));
 
@@ -102,7 +102,7 @@ describe('cycle-node-http', function () {
 
     });
 
-    it('http init with one post request', function (done) {
+    it('http init with one post request using a middleware', function (done) {
 
         const DATA_SENT = {
             cov:'fefe',
@@ -113,13 +113,13 @@ describe('cycle-node-http', function () {
 
             const { httpServer, fake, HTTP } = sources;
 
-            const http$ = httpServer.createHttp([1983]).endWhen(fake);
+            const http$ = httpServer.createHttp([1985]).endWhen(fake);
             const httpServerReady$ = http$.take(1);
             const serverRequest$ = http$.drop(1);
             const serverResponse$ = serverRequest$.map(({ req, res }) => res.json(req.body));
 
             const request$ = httpServerReady$.map(() => ({
-                url: 'http://127.0.0.1:1983',
+                url: 'http://127.0.0.1:1985',
                 method:'POST',
                 send:DATA_SENT,
                 category: 'foo'
