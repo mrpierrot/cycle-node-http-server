@@ -155,7 +155,7 @@ describe('driver', function () {
 
     });
 
-    it('http init with one get request and rendering with snabddom', function (done) {
+    it('http init with one get request and rendering with snabbdom', function (done) {
 
         function main(sources) {
 
