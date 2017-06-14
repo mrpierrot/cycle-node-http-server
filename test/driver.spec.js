@@ -6,11 +6,12 @@ const { run } = require('@cycle/run');
 
 const http = require('http');
 const assert = require('assert');
-const { makeFakeReadDriver } = require('./utils');
+const { makeFakeReadDriver, vdom } = require('./utils');
 const { makeHTTPDriver } = require('@cycle/http');
 const xs = require('xstream').default;
 const fs = require('fs');
 const bodyParser = require('body-parser');
+const { html } = require('snabbdom-jsx');
 
 const httpsOptions = {
     key: fs.readFileSync(`${__dirname}/certs/key.pem`),
@@ -147,6 +148,48 @@ describe('driver', function () {
             fake: makeFakeReadDriver((outgoing, i, complete) => {
                 if (outgoing.text) {
                     assert.equal(outgoing.text, JSON.stringify(DATA_SENT));
+                }
+            }, done, 1)
+        }
+        run(main, drivers);
+
+    });
+
+    it('http init with one get request and rendering with snabddom', function (done) {
+
+        function main(sources) {
+
+            const { httpServer, fake, HTTP } = sources;
+
+            const http$ = httpServer.createHttp({ port: 1983 }).endWhen(fake);
+            const httpServerReady$ = http$.take(1);
+            const serverRequest$ = http$.drop(1);
+            const serverResponse$ = serverRequest$.map(req => req.response.render(
+                <div>pouet</div>
+            ));
+
+            const request$ = httpServerReady$.map(() => ({
+                url: 'http://127.0.0.1:1983',
+                category: 'foo'
+            }));
+
+            const response$ = HTTP.select('foo').flatten();
+
+            const sinks = {
+                fake: response$,
+                httpServer: serverResponse$,
+                HTTP: request$
+            }
+
+            return sinks;
+        }
+
+        const drivers = {
+            httpServer: makeHttpServerDriver({render:vdom()}),
+            HTTP: makeHTTPDriver(),
+            fake: makeFakeReadDriver((outgoing, i, complete) => {
+                if (outgoing.text) {
+                    assert.equal(outgoing.text, '<div>pouet</div>')
                 }
             }, done, 1)
         }

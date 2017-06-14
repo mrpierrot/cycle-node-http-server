@@ -28,6 +28,8 @@
     "body-parser": "^1.17.2",
     "lodash": "^4.17.4",
     "mocha": "^3.4.2",
+    "snabbdom-jsx": "^0.3.1",
+    "snabbdom-to-html": "^3.2.0",
     "switch-path": "^1.2.0"
   },
   "author": "Pierre Chabiland",

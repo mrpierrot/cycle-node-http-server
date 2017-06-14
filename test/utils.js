@@ -1,5 +1,7 @@
 const _ = require('lodash');
 const xs = require('xstream').default;
+const snabbdomInit = require('snabbdom-to-html/init');
+const snabbdomModules = require('snabbdom-to-html/modules');
 
 export function makeFakeReadDriver(callback, done, count = -1) {
     return function fakeReadDriver(events$) {
@@ -42,3 +44,13 @@ export function makeFakeReadDriver(callback, done, count = -1) {
         return xs.create(producer)
     }
 }
+
+export function vdom(modules=[
+        snabbdomModules.class,
+        snabbdomModules.props,
+        snabbdomModules.attributes,
+        snabbdomModules.style
+    ]){
+    return snabbdomInit(modules);
+}
+
