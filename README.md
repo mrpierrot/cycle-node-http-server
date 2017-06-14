@@ -2,15 +2,21 @@
 
 Driver and routing component for manage HTTP/HTTPS services with Cycle.js
 
-## Installation
+## Installation with NPM
 
-Coming soon
+`npm i cycle-node-http-serve --save`
 
 ## HTTP/HTTPS Driver
 
-### `makeHttpServerDriver({ middlewares=[] })`
+### `makeHttpServerDriver(config)`
 
 create the driver
+
+**Arguments**
+
+- `config` with specifics options
+  - `middlewares :Array` : array of [express compatible middlewares](http://expressjs.com/en/guide/using-middleware.html)    like [serveStatic](https://github.com/expressjs/serve-static) or [bodyParser](https://github.com/expressjs/body-parser)
+  - `render: (template) => template` : a template engine renderer, call with `res.response.render(template)`
 
 #### Basic usage
 
@@ -42,11 +48,11 @@ run(main,drivers)
 **Arguments:**
 
 - `listenOptions` with specifics options
-  - `port` : see [server.listen on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `hostname` : see [server.listen on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `backlog` : see [server.listen on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `handle` : see [server.listen on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_handle_callback)
-  - `path` : see [server.listen on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_path_callback)
+  - `port` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
+  - `hostname` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
+  - `backlog` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
+  - `handle` : see [server.listen(handle[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_handle_callback)
+  - `path` : see [server.listen(path[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_path_callback)
 
 **return : Stream**. The first element send is the server ready event. Nexts elements are requests.
 
@@ -90,11 +96,11 @@ run(main,drivers)
 **Arguments:**
 
 - `listenOptions` with specifics options
-  - `port` : see [server.listen on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `hostname` : see [server.listen on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `backlog` : see [server.listen on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `handle` : see [server.listen on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_handle_callback)
-  - `path` : see [server.listen on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_path_callback)
+  - `port` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
+  - `hostname` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
+  - `backlog` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
+  - `handle` : see [server.listen(handle[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_handle_callback)
+  - `path` : see [server.listen(path[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_path_callback)
 - `secureOptions` : see [Node HTTPS createServer options](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener)
 
 **return : Stream**. The first element send is the server ready event. Nexts elements are requests.

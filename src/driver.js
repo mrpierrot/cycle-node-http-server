@@ -23,7 +23,7 @@ function applyMiddlewares(middlewares, req, res) {
     })
 }
 
-function createServerProducer(listenOptions, middlewares, createServer) {
+function createServerProducer(listenOptions, middlewares, render, createServer) {
     let server;
 
     const listenArgs = typeof (listenOptions.handle) === 'object' ? listenOptions.handle :
@@ -33,7 +33,7 @@ function createServerProducer(listenOptions, middlewares, createServer) {
     return {
         start(listener) {
             server = createServer((req, res) => applyMiddlewares(middlewares, req, res).then(() => {
-                listener.next(createRequestWrapper(req, res))
+                listener.next(createRequestWrapper(req, res, render))
             }));
             server.listen.apply(server, [...listenArgs, () => {
                 listener.next({
@@ -48,7 +48,7 @@ function createServerProducer(listenOptions, middlewares, createServer) {
     }
 }
 
-export function makeHttpServerDriver({ middlewares = [] } = {}) {
+export function makeHttpServerDriver({ middlewares = [], render = data => data } = {}) {
 
     return function httpServerDriver(input$) {
 
@@ -67,10 +67,10 @@ export function makeHttpServerDriver({ middlewares = [] } = {}) {
 
         return {
             createHttp(listenOptions = { port: null, hostname: null, backlog: null, handle: null, path: null }) {
-                return xs.create(createServerProducer(listenOptions, middlewares, (callback) => http.createServer(callback)))
+                return xs.create(createServerProducer(listenOptions, middlewares, render, (callback) => http.createServer(callback)))
             },
             createHttps(listenOptions = { port: null, hostname: null, backlog: null, handle: null, path: null }, secureOptions) {
-                return xs.create(createServerProducer(listenOptions, middlewares, (callback) => https.createServer(secureOptions, callback)))
+                return xs.create(createServerProducer(listenOptions, middlewares, render, (callback) => https.createServer(secureOptions, callback)))
 
             }
         }
