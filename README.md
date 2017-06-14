@@ -206,6 +206,8 @@ A Router component using [switch-path](https://github.com/staltz/switch-path)
 ### Example
 
 ```js
+ const {makeHttpServerDriver, Router} = require('cycle-node-http-server');
+
  function main(sources) {
 
     const { httpServer } = sources;
