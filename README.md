@@ -1,4 +1,4 @@
-# cycle-node-http-server
+# Cycle Node Http Server
 
 Driver and routing component for manage HTTP/HTTPS services with Cycle.js
 
@@ -10,13 +10,13 @@ Driver and routing component for manage HTTP/HTTPS services with Cycle.js
 
 ### `makeHttpServerDriver(config)`
 
-create the driver
+Create the driver
 
 **Arguments**
 
 - `config` with specifics options
-  - `middlewares :Array` : array of [express compatible middlewares](http://expressjs.com/en/guide/using-middleware.html)    like [serveStatic](https://github.com/expressjs/serve-static) or [bodyParser](https://github.com/expressjs/body-parser)
-  - `render: (template) => template` : a template engine renderer, call with `res.response.render(template)`
+  - `middlewares : Array` : array of [express compatible middlewares](http://expressjs.com/en/guide/using-middleware.html)    like [serveStatic](https://github.com/expressjs/serve-static) or [bodyParser](https://github.com/expressjs/body-parser)
+  - `render: (template) => template` : a template engine renderer, call with `req.response.render(template)`
 
 #### Basic usage
 
@@ -172,6 +172,10 @@ See `send()`
 Format response in html.
 See `send()`
 
+##### `render()` 
+
+Format response with the render engine defined in `makeHttpServerDriver()` options.
+
 ##### `redirect()` 
 
 Format response redirection for driver output.
@@ -190,7 +194,14 @@ Format response redirection for driver output.
 
 A Router component using [switch-path](https://github.com/staltz/switch-path)
 
-Documentation coming soon.
+**Arguments**
+
+`Router(sources,routes)`
+
+- `sources` :  Cycle.js sources object with a specific source `request$`, a stream of http(s) requests.
+- `routes` : a collection of routes. See [switch-path](https://github.com/staltz/switch-path)
+
+**Return stream**
 
 ### Example
 
@@ -203,9 +214,9 @@ Documentation coming soon.
     const httpServerReady$ = http$.take(1);
     const serverRequest$ = http$.drop(1);
 
-    const router$ = Router({ ...sources, request$: serverRequest$ }, {
-        '/': sources => Page({ ...sources, props$: xs.of({ desc: 'home' }) }),
-        '/user/:id': id => sources => Page({ ...sources, props$: xs.of({ desc: `user/${id}` }) }),
+    const router$ = Router({ request$: serverRequest$ }, {
+        '/': sources => Page({ props$: xs.of({ desc: 'home' }) }),
+        '/user/:id': id => sources => Page({ props$: xs.of({ desc: `user/${id}` }) }),
     })
 
     const sinks = {
@@ -215,13 +226,97 @@ Documentation coming soon.
 }
 
  function Page(sources) {
-
+    // request$ is add by the Router to the `sources` object
     const { props$, request$ } = sources;
-
     const sinks = {
         httpServer: xs.combine(props$, request$).map(([props, req]) => req.response.text(props.desc))
     }
-
     return sinks;
 }
 ```
+
+## Cooking with middlewares
+
+Here are discribed two usefull express middlewares.
+
+### [serveStatic](https://github.com/expressjs/serve-static)
+
+It is used to serve static files ( images, css, etc... )
+
+**Basic usage**
+
+```js
+const serveStatic = require('serve-static');
+const {makeHttpServerDriver} = require('cycle-node-http-server');
+
+const drivers = {
+  httpServer: makeHttpServerDriver({middlewares:[serveStatic('./public')]})
+}
+
+```
+
+### [bodyParser](https://github.com/expressjs/body-parser)
+
+It is used to parse request body and return a full formated body.
+
+**Basic usage**
+
+```js
+const bodyParser = require('body-parser');
+const {makeHttpServerDriver} = require('cycle-node-http-server');
+
+const drivers = {
+  httpServer: makeHttpServerDriver({
+      middlewares: [
+          // two parsers used to format body POST request in json
+          bodyParser.urlencoded({ extended: true }),
+          bodyParser.json()
+      ]
+  })
+}
+
+```
+
+## Using [Snabbdom](https://github.com/snabbdom/snabbdom)
+
+Snabbdom is the Virtual DOM using by @cycle/dom. It's possible to use it in server side with [snabbdom-to-html](https://github.com/snabbdom/snabbdom-to-html).
+
+A small helper to use `snabbdom` with `cycle-node-http-server`
+
+```js
+  const snabbdomInit = require('snabbdom-to-html/init');
+  const snabbdomModules = require('snabbdom-to-html/modules');
+  const {makeHttpServerDriver} = require('cycle-node-http-server');
+    
+  export default function vdom(modules=[
+          snabbdomModules.class,
+          snabbdomModules.props,
+          snabbdomModules.attributes,
+          snabbdomModules.style
+      ]){
+      return snabbdomInit(modules);
+  }
+  
+  const drivers = {
+    httpServer: makeHttpServerDriver({
+        render: vdom()
+    })
+  }
+
+```
+In `main` function, snabbdom used with JSX
+
+```js
+  const response$ = request$.map( req => req.response.render(
+    <div>
+      Pouet
+    </div>
+  ))
+
+```
+
+## License
+
+**MIT**
+
+
