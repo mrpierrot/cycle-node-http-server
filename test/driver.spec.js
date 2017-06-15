@@ -321,4 +321,48 @@ describe('driver', function () {
 
     });
 
+    it('double http init in the same port would fail', function (done) {
+
+        function main(sources) {
+
+            const { httpServer, fake } = sources;
+
+            const http = httpServer.select('http');
+            const serverReady$ = http.events('ready').replaceError(e => xs.of(e));
+
+            const httpCreate$ = xs.from([{
+                id: 'http-1',
+                action: 'create',
+                port: 2048
+            },
+            {
+                id: 'http-2',
+                action: 'create',
+                port: 2048
+            }]);
+
+            const httpClose$ = fake.mapTo({
+                action: 'close',
+                id: 'http',
+            });
+
+            const sinks = {
+                fake: serverReady$,
+                httpServer: xs.merge(httpCreate$, httpClose$),
+            }
+
+            return sinks;
+        }
+
+        const drivers = {
+            httpServer: makeHttpServerDriver(),
+            fake: makeFakeReadDriver((outgoing, i, complete) => {
+                assert.equal(outgoing.event,'error');
+            }, done, 1)
+        }
+        run(main, drivers); 
+
+    });
+
+
 });

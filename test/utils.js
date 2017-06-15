@@ -11,7 +11,7 @@ export function makeFakeReadDriver(callback, done, count = -1) {
                 callback(outgoing, i++,complete);
                 if(finish)finish();
             },
-            error: () => { },
+            error: (e) => { console.log('fake error : ',e) },
             complete: () => { },
         }
 

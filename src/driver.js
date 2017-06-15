@@ -37,6 +37,13 @@ function createServerProducer(instanceId, listenOptions, middlewares, render, cr
             server = createServer((req, res) => applyMiddlewares(middlewares, req, res).then(() => {
                 listener.next(createRequestWrapper(instanceId, req, res, render))
             }));
+            server.on('error',(e)=>{
+                listener.error({
+                    event: 'error',
+                    error:e,
+                    instanceId
+                })
+            })
             server.listen.apply(server, [...listenArgs, () => {
                 listener.next({
                     event: 'ready',
@@ -44,6 +51,7 @@ function createServerProducer(instanceId, listenOptions, middlewares, render, cr
                     instance: server
                 })
             }])
+
         },
 
         stop() {
@@ -87,10 +95,10 @@ export function makeHttpServerDriver({ middlewares = [], render = data => data }
             select(instanceId) {
                 return {
                     events(name) {
-                        return createAction$.filter(o => o.instanceId === instanceId && o.event === name);
+                        return adapt(createAction$.filter(o => o.instanceId === instanceId && o.event === name));
                     }
                 }
-            },
+            }
         }
 
     }
