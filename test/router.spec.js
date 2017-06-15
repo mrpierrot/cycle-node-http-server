@@ -32,25 +32,36 @@ describe('router', function () {
 
             const { httpServer, fake, HTTP } = sources;
 
-            const http$ = httpServer.createHttp({ port: 1983 }).endWhen(fake);
-            const httpServerReady$ = http$.take(1);
-            const serverRequest$ = http$.drop(1);
+            const http = httpServer.select('http');
+            const serverReady$ = http.events('ready');
+            const serverRequest$ = http.events('request');
 
             const router$ = Router({ ...sources, request$: serverRequest$ }, {
                 '/': sources => Page({ ...sources, props$: xs.of({ desc: 'home' }) }),
                 '/user/:id': id => sources => Page({ ...sources, props$: xs.of({ desc: `user/${id}` }) }),
             })
 
-            const request$ = httpServerReady$.map(() => ({
+            const request$ = serverReady$.map(() => ({
                 url: 'http://127.0.0.1:1983/user/21',
                 category: 'foo'
             }));
 
             const response$ = HTTP.select('foo').flatten();
 
+             const httpCreate$ = xs.of({
+                id: 'http',
+                action: 'create',
+                port: 1983
+            });
+
+            const httpStop$ = fake.mapTo({
+                action: 'stop',
+                id: 'http',
+            })
+
             const sinks = {
                 fake: response$,
-                httpServer: router$.map(c => c.httpServer).flatten(),
+                httpServer: xs.merge(httpCreate$,httpStop$,router$.map(c => c.httpServer).flatten()),
                 HTTP: request$
             }
 

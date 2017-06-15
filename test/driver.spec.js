@@ -13,7 +13,7 @@ const fs = require('fs');
 const bodyParser = require('body-parser');
 const { html } = require('snabbdom-jsx');
 
-const httpsOptions = {
+const securedOptions = {
     key: fs.readFileSync(`${__dirname}/certs/key.pem`),
     cert: fs.readFileSync(`${__dirname}/certs/cert.pem`)
 };
@@ -29,21 +29,32 @@ describe('driver', function () {
 
             const { httpServer, fake, HTTP } = sources;
 
-            const http$ = httpServer.createHttp({ port: 1983 }).endWhen(fake);
-            const httpServerReady$ = http$.take(1);
-            const serverRequest$ = http$.drop(1);
+            const http = httpServer.select('http');
+            const serverReady$ = http.events('ready');
+            const serverRequest$ = http.events('request');
             const serverResponse$ = serverRequest$.map(req => req.response.text('pouet'));
 
-            const request$ = httpServerReady$.map(() => ({
+            const request$ = serverReady$.map(() => ({
                 url: 'http://127.0.0.1:1983',
                 category: 'foo'
             }));
 
             const response$ = HTTP.select('foo').flatten();
 
+            const httpCreate$ = xs.of({
+                id: 'http',
+                action: 'create',
+                port: 1983
+            });
+
+            const httpStop$ = fake.mapTo({
+                action: 'stop',
+                id: 'http',
+            });
+
             const sinks = {
                 fake: response$,
-                httpServer: serverResponse$,
+                httpServer: xs.merge(httpCreate$, httpStop$, serverResponse$),
                 HTTP: request$
             }
 
@@ -63,27 +74,42 @@ describe('driver', function () {
 
     });
 
+
+
     it('https init with get request', function (done) {
 
         function main(sources) {
 
             const { httpServer, fake, HTTP } = sources;
 
-            const https$ = httpServer.createHttps({ port: 1984 }, httpsOptions).endWhen(fake);
-            const httpServerReady$ = https$.take(1);
-            const serverRequest$ = https$.drop(1);
+            const https = httpServer.select('https');
+            const serverReady$ = https.events('ready');
+            const serverRequest$ = https.events('request');
             const serverResponse$ = serverRequest$.map(req => req.response.text('pouet'));
 
-            const request$ = httpServerReady$.map(() => ({
+            const request$ = serverReady$.map(() => ({
                 url: 'https://127.0.0.1:1984',
                 category: 'foo'
             }));
 
             const response$ = HTTP.select('foo').flatten();
 
+            const httpsCreate$ = xs.of({
+                id: 'https',
+                action: 'create',
+                port: 1984,
+                secured: true,
+                securedOptions
+            });
+
+            const httpsStop$ = fake.mapTo({
+                action: 'stop',
+                id: 'https',
+            })
+
             const sinks = {
                 fake: response$,
-                httpServer: serverResponse$,
+                httpServer: xs.merge(httpsCreate$, httpsStop$, serverResponse$),
                 HTTP: request$
             }
 
@@ -96,6 +122,82 @@ describe('driver', function () {
             fake: makeFakeReadDriver((outgoing, i, complete) => {
                 if (outgoing.text) {
                     assert.equal(outgoing.text, 'pouet')
+                }
+            }, done, 1)
+        }
+        run(main, drivers);
+
+    });
+
+    it('http init and https init with get request', function (done) {
+
+        function main(sources) {
+            const { httpServer, fake, HTTP } = sources;
+
+            const http = httpServer.select('http');
+            const https = httpServer.select('https');
+            const httpServerReady$ = http.events('ready');
+            const httpsServerReady$ = https.events('ready');
+            const httpServerRequest$ = http.events('request');
+            const httpsServerRequest$ = https.events('request');
+            const httpServerResponse$ = httpServerRequest$.map(req => req.response.text('pouet'));
+            const httpsServerResponse$ = httpsServerRequest$.map(req => req.response.text('pouet'));
+
+            const httpRequest$ = httpServerReady$.map(() => ({
+                url: 'http://127.0.0.1:1983',
+                category: 'foo'
+            }));
+
+            const httpsRequest$ = httpsServerReady$.map(() => ({
+                url: 'https://127.0.0.1:1984',
+                category: 'foo-secured'
+            }));
+
+            const httpResponse$ = HTTP.select('foo').flatten();
+            const httpsResponse$ = HTTP.select('foo-secured').flatten();
+
+            const httpCreate$ = xs.of({
+                id: 'http',
+                action: 'create',
+                port: 1983
+            });
+
+            const httpsCreate$ = xs.of({
+                id: 'https',
+                action: 'create',
+                port: 1984,
+                secured: true,
+                securedOptions
+            });
+
+            const httpStop$ = fake.mapTo({
+                action: 'stop',
+                id: 'http',
+            });
+
+            const httpsStop$ = fake.mapTo({
+                action: 'stop',
+                id: 'https',
+            });
+
+            const sinks = {
+                fake: xs.combine(httpResponse$, httpsResponse$),
+                httpServer: xs.merge(httpCreate$, httpsCreate$, httpStop$, httpsStop$, httpServerResponse$, httpsServerResponse$),
+                HTTP: xs.merge(httpRequest$, httpsRequest$)
+            }
+
+            return sinks;
+        }
+
+        const drivers = {
+            httpServer: makeHttpServerDriver(),
+            HTTP: makeHTTPDriver(),
+            fake: makeFakeReadDriver(([httpResponse, httpsResponse], i, complete) => {
+                if (httpResponse.text) {
+                    assert.equal(httpResponse.text, 'pouet')
+                }
+                if (httpsResponse.text) {
+                    assert.equal(httpsResponse.text, 'pouet')
                 }
             }, done, 1)
         }
@@ -114,12 +216,12 @@ describe('driver', function () {
 
             const { httpServer, fake, HTTP } = sources;
 
-            const http$ = httpServer.createHttp({ port: 1985 }).endWhen(fake);
-            const httpServerReady$ = http$.take(1);
-            const serverRequest$ = http$.drop(1);
-            const serverResponse$ = serverRequest$.map(req => req.response.json(req.body));
+            const http = httpServer.select('http');
+            const serverReady$ = http.events('ready');
+            const serverRequest$ = http.events('request');
+            const serverResponse$ = serverRequest$.map(req => req.response.json(DATA_SENT));
 
-            const request$ = httpServerReady$.map(() => ({
+            const request$ = serverReady$.map(() => ({
                 url: 'http://127.0.0.1:1985',
                 method: 'POST',
                 send: DATA_SENT,
@@ -128,9 +230,20 @@ describe('driver', function () {
 
             const response$ = HTTP.select('foo').flatten();
 
+            const httpCreate$ = xs.of({
+                id: 'http',
+                action: 'create',
+                port: 1985
+            });
+
+            const httpStop$ = fake.mapTo({
+                action: 'stop',
+                id: 'http',
+            });
+
             const sinks = {
                 fake: response$,
-                httpServer: serverResponse$,
+                httpServer: xs.merge(httpCreate$, httpStop$, serverResponse$),
                 HTTP: request$
             }
 
@@ -161,23 +274,34 @@ describe('driver', function () {
 
             const { httpServer, fake, HTTP } = sources;
 
-            const http$ = httpServer.createHttp({ port: 1983 }).endWhen(fake);
-            const httpServerReady$ = http$.take(1);
-            const serverRequest$ = http$.drop(1);
+            const http = httpServer.select('http');
+            const serverReady$ = http.events('ready');
+            const serverRequest$ = http.events('request');
             const serverResponse$ = serverRequest$.map(req => req.response.render(
                 <div>pouet</div>
             ));
 
-            const request$ = httpServerReady$.map(() => ({
-                url: 'http://127.0.0.1:1983',
+            const request$ = serverReady$.map(() => ({
+                url: 'http://127.0.0.1:1986',
                 category: 'foo'
             }));
+
+            const httpCreate$ = xs.of({
+                id: 'http',
+                action: 'create',
+                port: 1986
+            });
+
+            const httpStop$ = fake.mapTo({
+                action: 'stop',
+                id: 'http',
+            });
 
             const response$ = HTTP.select('foo').flatten();
 
             const sinks = {
                 fake: response$,
-                httpServer: serverResponse$,
+                httpServer: xs.merge(httpCreate$, httpStop$, serverResponse$),
                 HTTP: request$
             }
 
@@ -185,7 +309,7 @@ describe('driver', function () {
         }
 
         const drivers = {
-            httpServer: makeHttpServerDriver({render:vdom()}),
+            httpServer: makeHttpServerDriver({ render: vdom() }),
             HTTP: makeHTTPDriver(),
             fake: makeFakeReadDriver((outgoing, i, complete) => {
                 if (outgoing.text) {

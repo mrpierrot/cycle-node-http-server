@@ -34,7 +34,9 @@ export function makeFakeReadDriver(callback, done, count = -1) {
             } else {
                 console.warn('No listener found for fake driver')
             }
-            if(done)done();
+            if(done){
+               setTimeout(done,10);
+            }
         }
   
         const finish = (count > 0)?_.after(count,complete ):null;

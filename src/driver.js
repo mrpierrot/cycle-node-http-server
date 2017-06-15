@@ -2,6 +2,8 @@ import http from 'http';
 import https from 'https';
 import xs from 'xstream';
 import { createRequestWrapper } from './request';
+import { adapt } from '@cycle/run/lib/adapt';
+import flattenConcurrently from 'xstream/extra/flattenConcurrently';
 
 function applyMiddlewares(middlewares, req, res) {
 
@@ -23,7 +25,7 @@ function applyMiddlewares(middlewares, req, res) {
     })
 }
 
-function createServerProducer(listenOptions, middlewares, render, createServer) {
+function createServerProducer(instanceId, listenOptions, middlewares, render, createServer) {
     let server;
 
     const listenArgs = typeof (listenOptions.handle) === 'object' ? listenOptions.handle :
@@ -33,10 +35,12 @@ function createServerProducer(listenOptions, middlewares, render, createServer) 
     return {
         start(listener) {
             server = createServer((req, res) => applyMiddlewares(middlewares, req, res).then(() => {
-                listener.next(createRequestWrapper(req, res, render))
+                listener.next(createRequestWrapper(instanceId, req, res, render))
             }));
             server.listen.apply(server, [...listenArgs, () => {
                 listener.next({
+                    event: 'ready',
+                    instanceId,
                     instance: server
                 })
             }])
@@ -48,31 +52,46 @@ function createServerProducer(listenOptions, middlewares, render, createServer) 
     }
 }
 
+function makeCreateAction(middlewares, render, stopAction$) {
+    return function createAction({ id, secured, securedOptions, port, hostname, backlog, handle, path }) {
+        const createServerFunc = secured ?
+            (callback) => https.createServer(securedOptions, callback) :
+            (callback) => http.createServer(callback);
+        return xs.create(createServerProducer(id, { port, hostname, backlog, handle, path }, middlewares, render, createServerFunc))
+            .endWhen(stopAction$.filter(o => o.id === id))
+    }
+}
+
+
+function sendAction({ res, content, headers = null, statusCode = 200, statusMessage = null }) {
+    res.writeHead(statusCode, statusMessage || '', headers);
+    res.end(content);
+}
+
 export function makeHttpServerDriver({ middlewares = [], render = data => data } = {}) {
 
     return function httpServerDriver(input$) {
+        const closeAction$ = input$.filter(o => o.action === 'stop');
+        const createAction$ = input$.filter(o => o.action === 'create')
+            .map(makeCreateAction(middlewares, render, closeAction$))
+            .compose(flattenConcurrently);
+        const sendAction$ = input$.filter(o => o.action === 'send').map(sendAction);
 
-        input$.addListener({
-            next({ res, content, headers = null, statusCode = 200, statusMessage = null }) {
-                res.writeHead(statusCode, statusMessage || '', headers);
-                res.end(content);
-            },
-            complete() {
-
-            },
-            error() {
-
-            }
-        })
+        sendAction$.addListener({
+            next() { },
+            complete() { },
+            error() { }
+        });
 
         return {
-            createHttp(listenOptions = { port: null, hostname: null, backlog: null, handle: null, path: null }) {
-                return xs.create(createServerProducer(listenOptions, middlewares, render, (callback) => http.createServer(callback)))
+            select(instanceId) {
+                return {
+                    events(name) {
+                        return createAction$.filter(o => o.instanceId === instanceId && o.event === name);
+                    }
+                }
             },
-            createHttps(listenOptions = { port: null, hostname: null, backlog: null, handle: null, path: null }, secureOptions) {
-                return xs.create(createServerProducer(listenOptions, middlewares, render, (callback) => https.createServer(secureOptions, callback)))
-
-            }
         }
+
     }
 }
