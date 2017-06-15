@@ -43,18 +43,72 @@ run(main,drivers)
 
 ```
 
-### `httpServer.createHttp()` get the http server stream.
+### Create a HTTP Server Instance
 
-**Arguments:**
+To create a server instance, we need to send a config stream to the httpServer output.
+Like this :
 
-- `listenOptions` with specifics options
-  - `port` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `hostname` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `backlog` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `handle` : see [server.listen(handle[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_handle_callback)
-  - `path` : see [server.listen(path[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_path_callback)
+```js
+   const httpCreate$ = xs.of({
+        id: 'http',
+        action: 'create',
+        port: 1983
+    });
+    
+    const sinks = {
+       httpServer: httpCreate$
+    }
+```
 
-**return : Stream**. The first element send is the server ready event. Nexts elements are requests.
+**create action config:**
+
+- `id` : the instance reference name. Needed to select the server stream on input.
+- `action:'create'` : the action name
+- `port` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
+- `hostname` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
+- `backlog` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
+- `handle` : see [server.listen(handle[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_handle_callback)
+- `path` : see [server.listen(path[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_path_callback)
+- `secured` : set at true to create a HTTPS server.
+- `securedOptions` : Needed if `secured`is `true` see [Node HTTPS createServer options](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener)
+
+**Basic example with HTTPS**
+
+```js
+     const securedOptions = {
+          key: fs.readFileSync(`${__dirname}/certs/key.pem`),
+          cert: fs.readFileSync(`${__dirname}/certs/cert.pem`)
+     };
+     
+     const httpsCreate$ = xs.of({
+        id: 'https',
+        action: 'create',
+        port: 1984,
+        secured: true,
+        securedOptions
+    });
+
+```
+
+### Close server instance
+
+To close a server instance we need to send a config stream to the httpServer output.
+
+```js
+   const httpClose$ = xs.of({
+        id: 'http',
+        action: 'close'
+    });
+    
+    const sinks = {
+       httpServer: httpClose$
+    }
+```
+
+**create action config:**
+
+- `id` : the instance reference name. Needed to select the server stream on input.
+- `action:'close'` : the action name
 
 #### Basic Usage
 
@@ -96,43 +150,6 @@ const drivers = {
 
 run(main,drivers)
 
-```
-
-### `httpServer.createHttps()` get the secure https server stream.
-
-**Arguments:**
-
-- `listenOptions` with specifics options
-  - `port` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `hostname` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `backlog` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `handle` : see [server.listen(handle[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_handle_callback)
-  - `path` : see [server.listen(path[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_path_callback)
-- `secureOptions` : see [Node HTTPS createServer options](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener)
-
-**return : Stream**. The first element send is the server ready event. Nexts elements are requests.
-
-```js
-
-const {run} = require('@cycle/run');
-const {makeHttpServerDriver} = require('cycle-node-http-server');
-const fs = require('fs')
-
-const httpsOptions = {
-    key: fs.readFileSync(`${__dirname}/certs/key.pem`),
-    cert: fs.readFileSync(`${__dirname}/certs/cert.pem`)
-};
-
-function main(sources){
-
-  const {httpServer} = sources;
-  // listen http request from port 1983
-  const https$ = httpServer.createHttps({port:1983},httpsOptions);
-  
-  ...
-}
-
-...
 ```
 
 ### `Request` object
