@@ -66,19 +66,26 @@ const {makeHttpServerDriver} = require('cycle-node-http-server');
 function main(sources){
 
   const {httpServer} = sources;
-  // listen http request from port 1983
-  const http$ = httpServer.createHttp({port:1983});
-  // The first element is the ready event
-  const httpReady$ = http$.take(1);
-  // Others are requests
-  const request$ = http$.drop(1);
+
+  // get http source
+  const http = httpServer.select('http');
+  // get ready event
+  const serverReady$ = http.events('ready');
+  // get requests
+  const serverRequest$ = http.events('request');
+
+  const httpCreate$ = xs.of({
+      id: 'http',
+      action: 'create',
+      port: 1983
+  });
   
   // response formated with a helper response object
   // Response in text format : 'covfefe'
-  const response$ = request$.map( req => req.response.text('covfefe') );
+  const response$ = serverRequest$.map( req => req.response.text('covfefe') );
 
   const sinks = {
-    httpServer: response$
+    httpServer: xs.merge(httpCreate$,response$)
   }
   return sinks;
 }
