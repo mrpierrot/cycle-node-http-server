@@ -43,102 +43,115 @@ run(main,drivers)
 
 ```
 
-### `httpServer.createHttp()` get the http server stream.
+### Create a HTTP Server Instance
 
-**Arguments:**
-
-- `listenOptions` with specifics options
-  - `port` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `hostname` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `backlog` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `handle` : see [server.listen(handle[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_handle_callback)
-  - `path` : see [server.listen(path[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_path_callback)
-
-**return : Stream**. The first element send is the server ready event. Nexts elements are requests.
-
-#### Basic Usage
+To create a server instance, we need to send a config stream to the httpServer output.
+Like this :
 
 ```js
+   const httpCreate$ = xs.of({
+        id: 'http',
+        action: 'create',
+        port: 1983
+    });
+    
+    const sinks = {
+       httpServer: httpCreate$
+    }
+```
 
-const {run} = require('@cycle/run');
-const {makeHttpServerDriver} = require('cycle-node-http-server');
+**create action config:**
 
-function main(sources){
+- `id` : the instance reference name. Needed to select the server stream on input.
+- `action:'create'` : the action name
+- `port` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
+- `hostname` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
+- `backlog` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
+- `handle` : see [server.listen(handle[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_handle_callback)
+- `path` : see [server.listen(path[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_path_callback)
+- `secured` : set at true to create a HTTPS server.
+- `securedOptions` : Needed if `secured`is `true` see [Node HTTPS createServer options](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener)
+- `middlewares : Array` : array of [express compatible middlewares](http://expressjs.com/en/guide/using-middleware.html)    like [serveStatic](https://github.com/expressjs/serve-static) or [bodyParser](https://github.com/expressjs/body-parser)
 
-  const {httpServer} = sources;
+**Basic example with HTTPS**
 
-  // get http source
-  const http = httpServer.select('http');
-  // get ready event
-  const serverReady$ = http.events('ready');
-  // get requests
-  const serverRequest$ = http.events('request');
-
-  const httpCreate$ = xs.of({
-      id: 'http',
-      action: 'create',
-      port: 1983
-  });
-  
-  // response formated with a helper response object
-  // Response in text format : 'covfefe'
-  const response$ = serverRequest$.map( req => req.response.text('covfefe') );
-
-  const sinks = {
-    httpServer: xs.merge(httpCreate$,response$)
-  }
-  return sinks;
-}
-
-const drivers = {
-  httpServer: makeHttpServerDriver()
-}
-
-run(main,drivers)
+```js
+     const securedOptions = {
+          key: fs.readFileSync(`${__dirname}/certs/key.pem`),
+          cert: fs.readFileSync(`${__dirname}/certs/cert.pem`)
+     };
+     
+     const httpsCreate$ = xs.of({
+        id: 'https',
+        action: 'create',
+        port: 1984,
+        secured: true,
+        securedOptions
+    });
 
 ```
 
-### `httpServer.createHttps()` get the secure https server stream.
+### Close server instance
 
-**Arguments:**
-
-- `listenOptions` with specifics options
-  - `port` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `hostname` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `backlog` : see [server.listen([port][, hostname][, backlog][, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_port_hostname_backlog_callback)
-  - `handle` : see [server.listen(handle[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_handle_callback)
-  - `path` : see [server.listen(path[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_path_callback)
-- `secureOptions` : see [Node HTTPS createServer options](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener)
-
-**return : Stream**. The first element send is the server ready event. Nexts elements are requests.
+To close a server instance we need to send a config stream to the httpServer output.
 
 ```js
-
-const {run} = require('@cycle/run');
-const {makeHttpServerDriver} = require('cycle-node-http-server');
-const fs = require('fs')
-
-const httpsOptions = {
-    key: fs.readFileSync(`${__dirname}/certs/key.pem`),
-    cert: fs.readFileSync(`${__dirname}/certs/cert.pem`)
-};
-
-function main(sources){
-
-  const {httpServer} = sources;
-  // listen http request from port 1983
-  const https$ = httpServer.createHttps({port:1983},httpsOptions);
-  
-  ...
-}
-
-...
+   const httpClose$ = xs.of({
+        id: 'http',
+        action: 'close'
+    });
+    
+    const sinks = {
+       httpServer: httpClose$
+    }
 ```
+
+**create action config:**
+
+- `id` : the instance reference name. Needed to select the server stream on input.
+- `action:'close'` : the action name
+
+### Select a server stream with `select(id)`
+
+Select the server width this specific `id`
+
+**Return Object**
+
+```js
+   const http = httpServer.select('http');
+```
+
+### Get events with `event(name)`
+
+Get event with `name` stream from a `http`object.
+
+```js
+   const http = httpServer.select('http');
+   const httpReady$ = http.events('ready');
+   const httpRequest$ = http.events('request');
+```
+**Return Stream**
+
+#### Event `ready`
+
+Dispatched when the server is ready to listen.
+
+**Returned values :**
+- `event` : `'ready'`
+- `instanceId` : The instance id
+- `instance` : the original Node.js server object
+
+#### Event `request`
+
+Dispatched when the server received a request.
+See `Request` object above. 
 
 ### `Request` object
 
 #### Properties
 
+- `event` : `'request'`,
+- `instanceId` : The instance id
 - `original` : original NodeJS request object,
 - `url` : request's url,
 - `method` : request's method (POST,GET,PUT, etc...),
@@ -197,6 +210,46 @@ Format response redirection for driver output.
   
 **Return formatted object for driver output**
 
+### Basic Usage
+
+```js
+
+const {run} = require('@cycle/run');
+const {makeHttpServerDriver} = require('cycle-node-http-server');
+
+function main(sources){
+
+  const {httpServer} = sources;
+
+  // get http source
+  const http = httpServer.select('http');
+  // get requests
+  const serverRequest$ = http.events('request');
+
+  const httpCreate$ = xs.of({
+      id: 'http',
+      action: 'create',
+      port: 1983
+  });
+  
+  // response formated with a helper response object
+  // Response in text format : 'covfefe'
+  const response$ = serverRequest$.map( req => req.response.text('covfefe') );
+
+  const sinks = {
+    httpServer: xs.merge(httpCreate$,response$)
+  }
+  return sinks;
+}
+
+const drivers = {
+  httpServer: makeHttpServerDriver()
+}
+
+run(main,drivers)
+
+```
+
 ## Routing
 
 A Router component using [switch-path](https://github.com/staltz/switch-path)
@@ -219,9 +272,10 @@ A Router component using [switch-path](https://github.com/staltz/switch-path)
 
     const { httpServer } = sources;
 
-    const http$ = httpServer.createHttp({ port: 1983 }).endWhen(fake);
-    const httpServerReady$ = http$.take(1);
-    const serverRequest$ = http$.drop(1);
+    // get http source
+    const http = httpServer.select('http');
+    // get requests
+    const serverRequest$ = http.events('request');
 
     const router$ = Router({ request$: serverRequest$ }, {
         '/': sources => Page({ props$: xs.of({ desc: 'home' }) }),
