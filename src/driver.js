@@ -52,12 +52,12 @@ function createServerProducer(instanceId, listenOptions, middlewares, render, cr
     }
 }
 
-function makeCreateAction(middlewares, render, stopAction$) {
-    return function createAction({ id, secured, securedOptions, port, hostname, backlog, handle, path }) {
+function makeCreateAction(rootMiddlewares, render, stopAction$) {
+    return function createAction({ id, secured, securedOptions, port, hostname, backlog, handle, path, middlewares=[] }) {
         const createServerFunc = secured ?
             (callback) => https.createServer(securedOptions, callback) :
             (callback) => http.createServer(callback);
-        return xs.create(createServerProducer(id, { port, hostname, backlog, handle, path }, middlewares, render, createServerFunc))
+        return xs.create(createServerProducer(id, { port, hostname, backlog, handle, path }, [...rootMiddlewares,...middlewares], render, createServerFunc))
             .endWhen(stopAction$.filter(o => o.id === id))
     }
 }
@@ -71,7 +71,7 @@ function sendAction({ res, content, headers = null, statusCode = 200, statusMess
 export function makeHttpServerDriver({ middlewares = [], render = data => data } = {}) {
 
     return function httpServerDriver(input$) {
-        const closeAction$ = input$.filter(o => o.action === 'stop');
+        const closeAction$ = input$.filter(o => o.action === 'close');
         const createAction$ = input$.filter(o => o.action === 'create')
             .map(makeCreateAction(middlewares, render, closeAction$))
             .compose(flattenConcurrently);

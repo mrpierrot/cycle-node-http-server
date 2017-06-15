@@ -47,14 +47,14 @@ describe('driver', function () {
                 port: 1983
             });
 
-            const httpStop$ = fake.mapTo({
-                action: 'stop',
+            const httpClose$ = fake.mapTo({
+                action: 'close',
                 id: 'http',
             });
 
             const sinks = {
                 fake: response$,
-                httpServer: xs.merge(httpCreate$, httpStop$, serverResponse$),
+                httpServer: xs.merge(httpCreate$, httpClose$, serverResponse$),
                 HTTP: request$
             }
 
@@ -102,14 +102,14 @@ describe('driver', function () {
                 securedOptions
             });
 
-            const httpsStop$ = fake.mapTo({
-                action: 'stop',
+            const httpsClose$ = fake.mapTo({
+                action: 'close',
                 id: 'https',
             })
 
             const sinks = {
                 fake: response$,
-                httpServer: xs.merge(httpsCreate$, httpsStop$, serverResponse$),
+                httpServer: xs.merge(httpsCreate$, httpsClose$, serverResponse$),
                 HTTP: request$
             }
 
@@ -156,33 +156,33 @@ describe('driver', function () {
             const httpResponse$ = HTTP.select('foo').flatten();
             const httpsResponse$ = HTTP.select('foo-secured').flatten();
 
-            const httpCreate$ = xs.of({
+            const serverCreate$ = xs.from([
+                {
+                    id: 'http',
+                    action: 'create',
+                    port: 1983
+                }, {
+                    id: 'https',
+                    action: 'create',
+                    port: 1984,
+                    secured: true,
+                    securedOptions
+                }
+            ]);
+
+            const httpClose$ = fake.mapTo({
+                action: 'close',
                 id: 'http',
-                action: 'create',
-                port: 1983
             });
 
-            const httpsCreate$ = xs.of({
-                id: 'https',
-                action: 'create',
-                port: 1984,
-                secured: true,
-                securedOptions
-            });
-
-            const httpStop$ = fake.mapTo({
-                action: 'stop',
-                id: 'http',
-            });
-
-            const httpsStop$ = fake.mapTo({
-                action: 'stop',
+            const httpsClose$ = fake.mapTo({
+                action: 'close',
                 id: 'https',
             });
 
             const sinks = {
                 fake: xs.combine(httpResponse$, httpsResponse$),
-                httpServer: xs.merge(httpCreate$, httpsCreate$, httpStop$, httpsStop$, httpServerResponse$, httpsServerResponse$),
+                httpServer: xs.merge(serverCreate$, httpClose$, httpsClose$, httpServerResponse$, httpsServerResponse$),
                 HTTP: xs.merge(httpRequest$, httpsRequest$)
             }
 
@@ -236,14 +236,14 @@ describe('driver', function () {
                 port: 1985
             });
 
-            const httpStop$ = fake.mapTo({
-                action: 'stop',
+            const httpClose$ = fake.mapTo({
+                action: 'close',
                 id: 'http',
             });
 
             const sinks = {
                 fake: response$,
-                httpServer: xs.merge(httpCreate$, httpStop$, serverResponse$),
+                httpServer: xs.merge(httpCreate$, httpClose$, serverResponse$),
                 HTTP: request$
             }
 
@@ -292,8 +292,8 @@ describe('driver', function () {
                 port: 1986
             });
 
-            const httpStop$ = fake.mapTo({
-                action: 'stop',
+            const httpClose$ = fake.mapTo({
+                action: 'close',
                 id: 'http',
             });
 
@@ -301,7 +301,7 @@ describe('driver', function () {
 
             const sinks = {
                 fake: response$,
-                httpServer: xs.merge(httpCreate$, httpStop$, serverResponse$),
+                httpServer: xs.merge(httpCreate$, httpClose$, serverResponse$),
                 HTTP: request$
             }
 

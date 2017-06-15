@@ -54,14 +54,14 @@ describe('router', function () {
                 port: 1983
             });
 
-            const httpStop$ = fake.mapTo({
-                action: 'stop',
+            const httpClose$ = fake.mapTo({
+                action: 'close',
                 id: 'http',
             })
 
             const sinks = {
                 fake: response$,
-                httpServer: xs.merge(httpCreate$,httpStop$,router$.map(c => c.httpServer).flatten()),
+                httpServer: xs.merge(httpCreate$,httpClose$,router$.map(c => c.httpServer).flatten()),
                 HTTP: request$
             }
 
