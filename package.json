@@ -1,6 +1,6 @@
 {
   "name": "cycle-node-http-server",
-  "version": "1.0.4",
+  "version": "2.0.0",
   "description": "A Node HTTP(S) driver for Cycle.js",
   "main": "dist/index.js",
   "scripts": {
