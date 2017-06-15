@@ -71,6 +71,7 @@ Like this :
 - `path` : see [server.listen(path[, callback]) on NodeJS Api](https://nodejs.org/api/http.html#http_server_listen_path_callback)
 - `secured` : set at true to create a HTTPS server.
 - `securedOptions` : Needed if `secured`is `true` see [Node HTTPS createServer options](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener)
+- `middlewares : Array` : array of [express compatible middlewares](http://expressjs.com/en/guide/using-middleware.html)    like [serveStatic](https://github.com/expressjs/serve-static) or [bodyParser](https://github.com/expressjs/body-parser)
 
 **Basic example with HTTPS**
 
@@ -110,52 +111,47 @@ To close a server instance we need to send a config stream to the httpServer out
 - `id` : the instance reference name. Needed to select the server stream on input.
 - `action:'close'` : the action name
 
-#### Basic Usage
+### Select a server stream with `select(id)`
+
+Select the server width this specific `id`
+
+**Return Object**
 
 ```js
-
-const {run} = require('@cycle/run');
-const {makeHttpServerDriver} = require('cycle-node-http-server');
-
-function main(sources){
-
-  const {httpServer} = sources;
-
-  // get http source
-  const http = httpServer.select('http');
-  // get ready event
-  const serverReady$ = http.events('ready');
-  // get requests
-  const serverRequest$ = http.events('request');
-
-  const httpCreate$ = xs.of({
-      id: 'http',
-      action: 'create',
-      port: 1983
-  });
-  
-  // response formated with a helper response object
-  // Response in text format : 'covfefe'
-  const response$ = serverRequest$.map( req => req.response.text('covfefe') );
-
-  const sinks = {
-    httpServer: xs.merge(httpCreate$,response$)
-  }
-  return sinks;
-}
-
-const drivers = {
-  httpServer: makeHttpServerDriver()
-}
-
-run(main,drivers)
-
+   const http = httpServer.select('http');
 ```
+
+### Get events with `event(name)`
+
+Get event with `name` stream from a `http`object.
+
+```js
+   const http = httpServer.select('http');
+   const httpReady$ = http.events('ready');
+   const httpRequest$ = http.events('request');
+```
+**Return Stream**
+
+#### Event `ready`
+
+Dispatched when the server is ready to listen.
+
+**Returned values :**
+- `event` : `'ready'`
+- `instanceId` : The instance id
+- `instance` : the original Node.js server object
+
+#### Event `request`
+
+Dispatched when the server received a request.
+See `Request` object above. 
 
 ### `Request` object
 
 #### Properties
 
+- `event` : `'request'`,
+- `instanceId` : The instance id
 - `original` : original NodeJS request object,
 - `url` : request's url,
 - `method` : request's method (POST,GET,PUT, etc...),
@@ -214,6 +210,46 @@ Format response redirection for driver output.
   
 **Return formatted object for driver output**
 
+### Basic Usage
+
+```js
+
+const {run} = require('@cycle/run');
+const {makeHttpServerDriver} = require('cycle-node-http-server');
+
+function main(sources){
+
+  const {httpServer} = sources;
+
+  // get http source
+  const http = httpServer.select('http');
+  // get requests
+  const serverRequest$ = http.events('request');
+
+  const httpCreate$ = xs.of({
+      id: 'http',
+      action: 'create',
+      port: 1983
+  });
+  
+  // response formated with a helper response object
+  // Response in text format : 'covfefe'
+  const response$ = serverRequest$.map( req => req.response.text('covfefe') );
+
+  const sinks = {
+    httpServer: xs.merge(httpCreate$,response$)
+  }
+  return sinks;
+}
+
+const drivers = {
+  httpServer: makeHttpServerDriver()
+}
+
+run(main,drivers)
+
+```
+
 ## Routing
 
 A Router component using [switch-path](https://github.com/staltz/switch-path)
@@ -236,9 +272,10 @@ A Router component using [switch-path](https://github.com/staltz/switch-path)
 
     const { httpServer } = sources;
 
-    const http$ = httpServer.createHttp({ port: 1983 }).endWhen(fake);
-    const httpServerReady$ = http$.take(1);
-    const serverRequest$ = http$.drop(1);
+    // get http source
+    const http = httpServer.select('http');
+    // get requests
+    const serverRequest$ = http.events('request');
 
     const router$ = Router({ request$: serverRequest$ }, {
         '/': sources => Page({ props$: xs.of({ desc: 'home' }) }),
