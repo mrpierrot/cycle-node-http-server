@@ -14,6 +14,10 @@
     "http",
     "https"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mrpierrot/cycle-node-http-server.git"
+  },
   "dependencies": {
     "xstream": "^10.7.0"
   },
