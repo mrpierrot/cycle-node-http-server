@@ -30,7 +30,7 @@ function main(sources){
   const {httpServer} = sources;
 
   const sinks = {
-    
+
   }
   return sinks;
 }
@@ -54,7 +54,7 @@ Like this :
         action: 'create',
         port: 1983
     });
-    
+
     const sinks = {
        httpServer: httpCreate$
     }
@@ -80,7 +80,7 @@ Like this :
           key: fs.readFileSync(`${__dirname}/certs/key.pem`),
           cert: fs.readFileSync(`${__dirname}/certs/cert.pem`)
      };
-     
+
      const httpsCreate$ = xs.of({
         id: 'https',
         action: 'create',
@@ -100,7 +100,7 @@ To close a server instance we need to send a config stream to the httpServer out
         id: 'http',
         action: 'close'
     });
-    
+
     const sinks = {
        httpServer: httpClose$
     }
@@ -144,7 +144,7 @@ Dispatched when the server is ready to listen.
 #### Event `request`
 
 Dispatched when the server received a request.
-See `Request` object above. 
+See `Request` object above.
 
 ### `Request` object
 
@@ -163,7 +163,7 @@ See `Request` object above.
 
 #### Methods
 
-##### `send()` 
+##### `send()`
 
 Format response for driver output.
 
@@ -174,7 +174,7 @@ Format response for driver output.
  - `statusCode` : default `200`
  - `headers` : default `null`
  - `statusMessage` : default `null`
-  
+
 **Return formatted object for driver output**
 
 ##### `json()`
@@ -192,11 +192,11 @@ See `send()`
 Format response in html.
 See `send()`
 
-##### `render()` 
+##### `render()`
 
 Format response with the render engine defined in `makeHttpServerDriver()` options.
 
-##### `redirect()` 
+##### `redirect()`
 
 Format response redirection for driver output.
 
@@ -207,7 +207,7 @@ Format response redirection for driver output.
  - `statusCode` : default `302`
  - `headers` : default `null`
  - `statusMessage` : default `null`
-  
+
 **Return formatted object for driver output**
 
 ### Basic Usage
@@ -231,7 +231,7 @@ function main(sources){
       action: 'create',
       port: 1983
   });
-  
+
   // response formated with a helper response object
   // Response in text format : 'covfefe'
   const response$ = serverRequest$.map( req => req.response.text('covfefe') );
@@ -269,27 +269,34 @@ A Router component using [switch-path](https://github.com/staltz/switch-path)
  const {makeHttpServerDriver, Router} = require('cycle-node-http-server');
 
  function main(sources) {
-
     const { httpServer } = sources;
 
     // get http source
     const http = httpServer.select('http');
+
+    // create the http server
+    const httpCreate$ = xs.of({
+        id: 'http',
+        action: 'create',
+        port: 1983,
+    });
+
     // get requests
     const serverRequest$ = http.events('request');
 
+    // routing
     const router$ = Router({ request$: serverRequest$ }, {
-        '/': sources => Page({ props$: xs.of({ desc: 'home' }) }),
-        '/user/:id': id => sources => Page({ props$: xs.of({ desc: `user/${id}` }) }),
-    })
+        '/': sources => Page(Object.assign({}, sources, { props$: xs.of({ desc: 'home' }) })),
+        '/user/:id': id => sources => Page(Object.assign({}, sources, { props$: xs.of({ desc: `user/${id}` }) })),
+    });
 
     const sinks = {
-        httpServer: router$.map(c => c.httpServer).flatten(),
-    }
+        httpServer: xs.merge(httpCreate$, router$.map(c => c.httpServer).flatten()),
+    };
     return sinks;
 }
 
  function Page(sources) {
-    // request$ is add by the Router to the `sources` object
     const { props$, request$ } = sources;
     const sinks = {
         httpServer: xs.combine(props$, request$).map(([props, req]) => req.response.text(props.desc))
@@ -350,7 +357,7 @@ A small helper to use `snabbdom` with `cycle-node-http-server`
   const snabbdomInit = require('snabbdom-to-html/init');
   const snabbdomModules = require('snabbdom-to-html/modules');
   const {makeHttpServerDriver} = require('cycle-node-http-server');
-    
+
   export default function vdom(modules=[
           snabbdomModules.class,
           snabbdomModules.props,
@@ -359,7 +366,7 @@ A small helper to use `snabbdom` with `cycle-node-http-server`
       ]){
       return snabbdomInit(modules);
   }
-  
+
   const drivers = {
     httpServer: makeHttpServerDriver({
         render: vdom()
